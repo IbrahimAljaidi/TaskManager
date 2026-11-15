@@ -1,0 +1,20 @@
+"use client";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { blankTask, now, uid, type Message, type Project, type Proposal, type Task } from "./domain";
+type Data = { projects: Project[]; tasks: Task[]; selected: string; theme: "dark" | "light"; messages: Record<string, Message[]>; proposal: Proposal | null; version: number; select: (id: string) => void; setTheme: (v: "dark" | "light") => void; createProject: (name: string, goal?: string, description?: string) => string; updateProject: (id: string, values: Pick<Project, "name" | "goal" | "description">) => void; removeProject: (id: string) => void; createFromProposal: (p: Proposal) => string; setProposal: (p: Proposal | null) => void; upsertTask: (task: Task) => void; batchUpdate: (ids: string[], status?: Task["status"], tag?: string) => void; removeTask: (id: string) => void; reorder: (id: string, status: Task["status"], beforeId?: string) => void; addMessage: (scope: string, role: Message["role"], content: string) => void };
+export const useStore = create<Data>()(persist((set) => ({
+  projects: [], tasks: [], selected: "", theme: "dark", messages: {}, proposal: null, version: 0,
+  select: selected => set({ selected }),
+  setTheme: theme => set({ theme }),
+  createProject: (name, goal = "", description = "") => { const id = uid(); const stamp = now(); set(s => ({ projects: [...s.projects, { id, name: name.trim(), goal, description, createdAt: stamp, updatedAt: stamp }], selected: id, version: s.version + 1 })); return id; },
+  updateProject: (id, values) => set(s => ({ projects: s.projects.map(p => p.id === id ? { ...p, ...values, name: values.name.trim(), updatedAt: now() } : p), version: s.version + 1 })),
+  removeProject: id => set(s => { const messages = { ...s.messages }; delete messages[id]; return { projects: s.projects.filter(p => p.id !== id), tasks: s.tasks.filter(t => t.projectId !== id), selected: s.selected === id ? "all" : s.selected, messages, version: s.version + 1 }; }),
+  createFromProposal: p => { const id = uid(), stamp = now(); const project: Project = { id, name: p.name.trim(), goal: p.goal, description: p.description, createdAt: stamp, updatedAt: stamp }; const tasks = p.tasks.map((t, order) => ({ ...blankTask(id, t.title), description: t.description || "", priority: t.priority || "medium", checklist: (t.checklist || []).map(c => ({ id: uid(), text: c.text, done: !!c.done })), order })); set(s => ({ projects: [...s.projects, project], tasks: [...s.tasks, ...tasks], selected: id, proposal: null, version: s.version + 1 })); return id; },
+  setProposal: proposal => set({ proposal }),
+  upsertTask: task => set(s => ({ tasks: s.tasks.some(t => t.id === task.id) ? s.tasks.map(t => t.id === task.id ? { ...task, updatedAt: now() } : t) : [...s.tasks, task], version: s.version + 1 })),
+  batchUpdate: (ids, status, tag) => set(s => ({ tasks: s.tasks.map(t => ids.includes(t.id) ? { ...t, status: status || t.status, tags: tag ? [...new Set([...t.tags, tag])] : t.tags, updatedAt: now() } : t), version: s.version + 1 })),
+  removeTask: id => set(s => ({ tasks: s.tasks.filter(t => t.id !== id), version: s.version + 1 })),
+  reorder: (id, status, beforeId) => set(s => { const task = s.tasks.find(t => t.id === id); if (!task) return s; const peers = s.tasks.filter(t => t.projectId === task.projectId && t.status === status && t.id !== id).sort((a,b) => a.order - b.order); const at = beforeId ? peers.findIndex(t => t.id === beforeId) : -1; const order = at < 0 ? (peers.at(-1)?.order ?? 0) + 1 : at === 0 ? peers[0].order - 1 : (peers[at - 1].order + peers[at].order) / 2; return { tasks: s.tasks.map(t => t.id === id ? { ...t, status, order, updatedAt: now() } : t), version: s.version + 1 }; }),
+  addMessage: (scope, role, content) => set(s => ({ messages: { ...s.messages, [scope]: [...(s.messages[scope] || []), { id: uid(), role, content, at: now() }].slice(-40) } })),
+}), { name: "taskflow-v1", version: 1, partialize: s => ({ projects: s.projects, tasks: s.tasks, selected: s.selected, theme: s.theme, messages: s.messages, proposal: s.proposal, version: s.version }) }));
