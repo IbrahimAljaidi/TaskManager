@@ -33,7 +33,7 @@ def test_off_topic_redirect_does_not_call_task_model(monkeypatch, message):
     ).text.splitlines()]
     assert [event["type"] for event in events] == ["status", "delta", "done"]
     reply = events[1]["text"]
-    assert "TaskFlow" in reply
+    assert "FlowMate" in reply
     assert not any(word in reply for word in ("°C", "forecast", "temperature", "درجة"))
     if any("\u0600" <= char <= "\u06ff" for char in message):
         assert "المشاريع" in reply

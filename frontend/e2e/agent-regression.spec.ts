@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function send(page: Page, message: string) {
-  await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill(message);
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill(message);
   await page.getByRole("button", { name: "Send message" }).click();
 }
 

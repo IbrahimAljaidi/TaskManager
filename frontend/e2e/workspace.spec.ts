@@ -41,6 +41,7 @@ test("board drag and list share the same task", async ({ page }) => {
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 18 });
   await page.mouse.up();
   await expect(page.locator(".column-progress")).toContainText("Ship release");
+  await expect(page.locator(".drag-preview")).toHaveCount(0);
   await page.getByRole("tab", { name: "List" }).click();
   await expect(page.locator(".list-row")).toContainText("In Progress");
 });
@@ -59,7 +60,7 @@ test("copilot executes a mocked tool request in the browser", async ({ page }) =
       : { type: "tool_request", continuation: "mock", calls: [{ id: "call-1", function: { name: "move_task", arguments: JSON.stringify({ taskId: body.tasks[0].id, status: "done" }) } }] };
     await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: JSON.stringify(line) + "\n" + (body.continuation ? '{"type":"done"}\n' : "") });
   });
-  await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill("Move Review agent to Done");
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Move Review agent to Done");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.locator(".column-done")).toContainText("Review agent");
   await expect(page.locator(".bubble.assistant")).toContainText("Moved Review agent to Done.");
@@ -73,7 +74,7 @@ test("copilot project proposal waits for edited approval", async ({ page }) => {
       : { type: "tool_request", continuation: "mock", calls: [{ id: "proposal-1", function: { name: "propose_project", arguments: JSON.stringify({ name: "Launch", goal: "Ship a website", description: "A practical launch plan", tasks: [{ title: "Draft pages", priority: "high" }] }) } }] };
     await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: JSON.stringify(line) + "\n" + (body.continuation ? '{"type":"done"}\n' : "") });
   });
-  await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill("Plan a website launch");
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Plan a website launch");
   await page.getByRole("button", { name: "Send message" }).click();
   const dialog = page.getByRole("dialog", { name: "Project proposal" });
   await expect(dialog).toBeVisible();

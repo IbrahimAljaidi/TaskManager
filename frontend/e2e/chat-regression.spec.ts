@@ -8,7 +8,7 @@ test("user message appears immediately, thinking reflects the pending request, a
     await pending;
     await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: '{"type":"status","code":"THINKING"}\n{"type":"delta","text":"Here is a plan."}\n{"type":"done"}\n' });
   });
-  await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill("Help me plan a project");
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Help me plan a project");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.locator(".bubble.user")).toHaveText("Help me plan a project");
   await expect(page.locator(".thinking")).toBeVisible();
@@ -24,7 +24,7 @@ test("Arabic chat bubbles use RTL and keep the newest response in view", async (
   await page.goto("/");
   await page.route("**/api/agent/turn", route => route.fulfill({ status: 200, contentType: "application/x-ndjson", body: '{"type":"delta","text":"أستطيع مساعدتك في تخطيط مشروعك."}\n{"type":"done"}\n' }));
   for (let index = 0; index < 14; index++) {
-    await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill(`نظم مهامي ${index}`);
+    await page.getByRole("textbox", { name: "Ask FlowMate" }).fill(`نظم مهامي ${index}`);
     await page.getByRole("button", { name: "Send message" }).click();
     await expect(page.locator(".bubble.assistant")).toHaveCount(index + 1);
   }
@@ -46,7 +46,7 @@ test("a project switch cancels pending chat without crossing conversation histor
     try { await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: '{"type":"delta","text":"Project reply"}\n{"type":"done"}\n' }); }
     catch { /* The original project's request was aborted on navigation. */ }
   });
-  await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill("Alpha question");
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Alpha question");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.locator(".thinking")).toBeVisible();
   await page.getByRole("button", { name: "New project", exact: true }).click();
@@ -78,7 +78,7 @@ test("tool execution announces its real action and records success", async ({ pa
       ? '{"type":"delta","text":"Created the task."}\n{"type":"done"}\n'
       : JSON.stringify({ type: "tool_request", continuation: "mock", calls: [{ id: "create-1", function: { name: "create_task", arguments: '{"title":"Observed task"}' } }] }) + "\n" });
   });
-  await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill("Create Observed task");
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Create Observed task");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.locator(".column-todo")).toContainText("Observed task");
   await expect(page.locator(".trace.done")).toContainText("Create task");

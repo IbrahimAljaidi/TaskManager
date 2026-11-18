@@ -5,7 +5,7 @@ test("real Arabic weather request and city follow-up stay outside TaskFlow scope
   test.setTimeout(90_000);
   await page.goto("/");
   for (const [index, question] of ["كم الطقس اليوم؟", "رياض"].entries()) {
-    await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill(question);
+    await page.getByRole("textbox", { name: "Ask FlowMate" }).fill(question);
     await page.getByRole("button", { name: "Send message" }).click();
     await expect(page.locator(".bubble.assistant").nth(index)).toContainText("المشاريع", { timeout: 60_000 });
     await expect(page.locator(".trace")).toHaveCount(0);

@@ -4,7 +4,7 @@ test.skip(!process.env.TASKFLOW_LIVE_AI, "requires an authorized local provider 
 test("real provider proposes a project and creates it only after edited approval", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Ask AI Copilot" }).fill("Create a project named Customer Support Bot. Goal: build a bilingual FAQ assistant for our website. Suggest a concise description and three implementation tasks with priorities. Show me the editable proposal for approval.");
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Create a project named Customer Support Bot. Goal: build a bilingual FAQ assistant for our website. Suggest a concise description and three implementation tasks with priorities. Show me the editable proposal for approval.");
   await page.getByRole("button", { name: "Send message" }).click();
   const proposal = page.getByRole("dialog", { name: "Project proposal" });
   await expect(proposal).toBeVisible({ timeout: 80_000 });
