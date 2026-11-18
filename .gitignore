@@ -27,3 +27,33 @@ gcp-sa-key.json
 frontend/.npm-cache/
 
 *.tsbuildinfo
+# Local Codex / AI Agent instructions
+**/AGENTS.md
+.agents/
+
+# Preserve these original company files locally; do not stage unsafe deployment workflows.
+.github/actions/setup-gcp-authentication/action.yml
+.github/workflows/deploy.yml
+.github/workflows/destroy.yml
+terraform/cloudrun.tf
+terraform/variables.tf
+references/develop-original.zip
+
+# Local browser evidence may contain conversation or continuation data.
+docs/verification/*trace*.json
+
+# Only the root README.md should be published
+*.md
+!/README.md
+
+# Local-only project documentation and references
+/docs/
+/references/
+/COMPANY_FILE_SHA256.txt
+
+# Local AI tools and skills
+/.agents/
+
+# Local-only integrity and reference checks
+/scripts/check_company_integrity.py
+/scripts/check_contract.py
