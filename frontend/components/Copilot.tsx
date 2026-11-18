@@ -5,6 +5,7 @@ import { Activity, Send, Sparkles, X } from "lucide-react";
 import { friendlyError, runAgent, type AgentPhase, type Trace } from "@/lib/agent";
 import type { Message } from "@/lib/domain";
 import { useStore } from "@/lib/store";
+import { localize, useUiLanguage } from "@/components/UiLanguage";
 
 type Props = { scope: string; open: boolean; setOpen: (value: boolean) => void };
 const EMPTY_MESSAGES: Message[] = [];
@@ -20,6 +21,8 @@ const labels: Record<string, [string, string]> = {
 };
 
 export default function Copilot({ scope, open, setOpen }: Props) {
+  const language = useUiLanguage();
+  const t = (en: string, ar: string) => localize(language, en, ar);
   const messages = useStore(state => state.messages[scope]) || EMPTY_MESSAGES;
   const addMessage = useStore(state => state.addMessage);
   const [input, setInput] = useState("");
@@ -81,14 +84,14 @@ export default function Copilot({ scope, open, setOpen }: Props) {
     }
   }
 
-  if (!open) return <button className="copilot-fab" onClick={() => setOpen(true)}><Sparkles size={18}/> AI Copilot</button>;
+  if (!open) return <button className="copilot-fab" onClick={() => setOpen(true)}><Sparkles size={18}/> FlowMate</button>;
   const arabic = /[\u0600-\u06ff]/.test(messages.at(-1)?.content || input);
   const executing = trace.findLast(item => item.status === "pending");
 
-  return <aside className="copilot" aria-label="TaskFlow AI Copilot">
-    <div className="copilot-top"><div className="spark-icon"><Sparkles size={18}/></div><div><h2>TaskFlow AI Copilot</h2><span className="online">● &nbsp;Ready · {scope === "all" ? "All projects" : "Current project"}</span></div><button className="icon-btn close-chat" onClick={() => setOpen(false)} aria-label="Close copilot"><X size={18}/></button></div>
+  return <aside className="copilot" aria-label="FlowMate AI Studio">
+    <div className="copilot-top"><div className="spark-icon"><Sparkles size={18}/></div><div><h2>FlowMate</h2><span className="online">● &nbsp;{t("Ready", "جاهز")} · {scope === "all" ? t("All projects", "كل المشاريع") : t("Current project", "المشروع الحالي")}</span></div><button className="icon-btn close-chat" onClick={() => setOpen(false)} aria-label="Close copilot"><X size={18}/></button></div>
     <div className="chat-scroll" ref={scrollRef} role="log" aria-live="polite" aria-relevant="additions text">
-      {messages.length === 0 && <div className="chat-welcome"><div className="orb">✦</div><h3>Work smarter, together.</h3><p>Ask me to plan a project, manage tasks, or make sense of your progress.</p><div className="suggestions">{["Create a new project", "What should I work on first?", "Summarize this board"].map(value => <button key={value} onClick={() => send(value)}><Sparkles size={14}/>{value}</button>)}</div></div>}
+      {messages.length === 0 && <div className="chat-welcome"><div className="orb">✦</div><h3>{t("Make space for your next idea.", "ابدأ فكرتك القادمة بوضوح.")}</h3><p>{t("Plan a project, manage tasks, or explore what to focus on next.", "خطط لمشروع، نظّم المهام، أو حدد أولوياتك التالية.")}</p><div className="suggestions">{[t("Create a new project", "أنشئ مشروعًا جديدًا"), t("What should I work on first?", "ما المهمة التي أبدأ بها؟"), t("Summarize this board", "لخص هذه اللوحة")].map(value => <button key={value} onClick={() => send(value)}><Sparkles size={14}/>{value}</button>)}</div></div>}
       {messages.map(message => <div key={message.id} className={"bubble " + message.role} dir="auto">{message.content}</div>)}
       {trace.map(action => <div className={"trace " + action.status} key={action.id} dir="auto"><Activity size={13}/><strong>{(labels[action.name] || ["Project action", "إجراء على المشروع"])[arabic ? 1 : 0]}</strong><span>· {action.status === "pending" ? (arabic ? "جارٍ التنفيذ" : "Executing") : action.status === "done" ? (arabic ? "اكتمل" : "Completed") : (arabic ? "تعذر التنفيذ" : "Failed")}</span><small>{action.detail}</small></div>)}
       {live && <div className="bubble assistant" dir="auto">{live}</div>}
@@ -96,6 +99,6 @@ export default function Copilot({ scope, open, setOpen }: Props) {
       {busy && phase === "executing" && <div className="executing" role="status">{arabic ? "جارٍ التنفيذ" : "Executing"}{executing ? ` · ${(labels[executing.name] || ["Project action", "إجراء على المشروع"])[arabic ? 1 : 0]}` : ""}<span className="thinking-dots" aria-hidden="true"><i/><i/><i/></span></div>}
       {error && <div className="chat-error" role="alert" dir="auto">{error}</div>}
     </div>
-    <div className="chat-compose"><form onSubmit={event => { event.preventDefault(); send(); }}><input aria-label="Ask AI Copilot" dir="auto" value={input} onChange={event => setInput(event.target.value)} placeholder="Ask anything about your work..." disabled={busy}/><button className="send" type="submit" disabled={busy || !input.trim()} aria-label="Send message"><Send size={17}/></button></form><small>Relevant project context is sent to an external AI service when you use Copilot. Tasks stay in this browser.</small></div>
+    <div className="chat-compose"><form onSubmit={event => { event.preventDefault(); send(); }}><input aria-label={t("Ask FlowMate", "اسأل FlowMate")} dir="auto" value={input} onChange={event => setInput(event.target.value)} placeholder={t("Ask FlowMate about your work...", "اسأل FlowMate عن عملك...")} disabled={busy}/><button className="send" type="submit" disabled={busy || !input.trim()} aria-label="Send message"><Send size={17}/></button></form><small>{t("Relevant project context is sent to an external AI service when you use FlowMate. Tasks stay in this browser.", "عند استخدام FlowMate، يُرسل سياق المشروع ذو الصلة إلى خدمة ذكاء اصطناعي خارجية. تبقى المهام في هذا المتصفح.")}</small></div>
   </aside>;
 }
