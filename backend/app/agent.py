@@ -13,9 +13,9 @@ from .tools import TOOL_SCHEMAS
 
 MODEL_FALLBACK = "openai/gpt-4o-mini"
 MAX_CONTENT = 16_000
-MAX_ARGUMENTS = 8_000
+MAX_ARGUMENTS = 20_000
 MAX_CALLS = 5
-SCOPE_PROMPT = """Classify whether the latest user request belongs in TaskFlow AI Copilot.
+SCOPE_PROMPT = """Classify whether the latest user request belongs in FlowMate.
 Supported: greetings; project/task creation and changes; project planning, prioritization,
 scheduling, Kanban, progress analysis, productivity and project-management education.
 Off-topic: requests for live weather, news, stock prices, general trivia, coding help unrelated
@@ -43,8 +43,9 @@ SCOPE_TOOL = {
 class AgentError(Exception):
     """An internal failure represented externally by a stable, safe code."""
 
-    def __init__(self, code: str):
+    def __init__(self, code: str, reason: str = "unknown"):
         self.code = code
+        self.reason = reason
         super().__init__(code)
 
 
@@ -112,7 +113,7 @@ def _append_part(existing: str, fragment: Any, limit: int, *, repeat_is_identity
         raise AgentError("MALFORMED_RESPONSE")
     value = existing if repeat_is_identity and fragment == existing else existing + fragment
     if len(value) > limit:
-        raise AgentError("MALFORMED_RESPONSE")
+        raise AgentError("MALFORMED_RESPONSE", "stream_field_length")
     return value
 
 
@@ -134,7 +135,7 @@ async def provider(
         "tools": TOOL_SCHEMAS,
         "tool_choice": "auto",
         "parallel_tool_calls": True,
-        "max_completion_tokens": 2400,
+        "max_completion_tokens": 4200,
         "stream": True,
     }
     try:

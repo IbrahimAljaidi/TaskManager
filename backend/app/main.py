@@ -197,7 +197,28 @@ async def agent_turn(turn: Turn, request: Request):
             answer = await task
             calls = answer.get("tool_calls") or []
             if calls:
-                calls = validate_calls(calls)
+                try:
+                    calls = validate_calls(calls)
+                except ToolValidationError as exc:
+                    logger.warning(
+                        "agent_tool_retry cid=%s reason=%s tool=%s field=%s",
+                        correlation_id, exc.reason, exc.tool, exc.field,
+                    )
+                    async def discard_delta(_chunk: str) -> None:
+                        pass
+
+                    repair_instruction = (
+                        "Your previous tool call failed validation. Reissue one complete tool call "
+                        "using valid JSON arguments that exactly match its declared schema. "
+                        "Keep project proposals concise, with no more than ten tasks and "
+                        "two checklist items per task. Do not add prose or invent browser results."
+                    )
+                    repair_messages = [messages[0], {"role": "system", "content": repair_instruction}, *messages[1:]]
+                    answer = await provider(repair_messages, discard_delta)
+                    calls = answer.get("tool_calls") or []
+                    if not calls:
+                        raise ToolValidationError("repair_missing_call", exc.tool)
+                    calls = validate_calls(calls)
                 answer["tool_calls"] = calls
                 continuation = token(
                     {
@@ -222,13 +243,16 @@ async def agent_turn(turn: Turn, request: Request):
                 if not answer.get("content"):
                     raise AgentError("EMPTY_RESPONSE")
                 yield line("done", correlationId=correlation_id)
-        except ToolValidationError:
-            logger.warning("agent_failure cid=%s code=INVALID_TOOL_CALL", correlation_id)
+        except ToolValidationError as exc:
+            logger.warning(
+                "agent_failure cid=%s code=INVALID_TOOL_CALL reason=%s tool=%s field=%s",
+                correlation_id, exc.reason, exc.tool, exc.field,
+            )
             yield line(
                 "error", code="INVALID_TOOL_CALL", correlationId=correlation_id
             )
         except AgentError as exc:
-            logger.warning("agent_failure cid=%s code=%s", correlation_id, exc.code)
+            logger.warning("agent_failure cid=%s code=%s reason=%s", correlation_id, exc.code, exc.reason)
             yield line("error", code=exc.code, correlationId=correlation_id)
         except asyncio.CancelledError:
             logger.info("agent_cancelled cid=%s", correlation_id)
