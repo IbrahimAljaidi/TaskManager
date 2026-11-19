@@ -1,0 +1,37 @@
+import { expect, test } from "@playwright/test";
+
+test.skip(!process.env.TASKFLOW_LIVE_AI, "requires an authorized local provider key");
+test("real provider moves and reprioritizes one browser-owned task", async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create project" }).click();
+  await page.getByRole("dialog", { name: "New project" }).getByLabel("Project name").fill("FlowMate live verification");
+  await page.getByRole("button", { name: /Create project/ }).last().click();
+  await page.getByRole("button", { name: "Add task" }).first().click();
+  await page.getByRole("dialog", { name: "Create task" }).getByLabel("Task title").fill("Define project scope and requirements");
+  await page.getByRole("button", { name: "Save task" }).click();
+  await page.getByRole("button", { name: "Add task" }).first().click();
+  await page.getByRole("dialog", { name: "Create task" }).getByLabel("Task title").fill("Manual verification item");
+  await page.getByRole("button", { name: "Save task" }).click();
+  await page.getByRole("button", { name: "Drag Manual verification item" }).focus();
+  await page.keyboard.press("Alt+ArrowRight");
+  await expect(page.locator(".column-progress")).toContainText("Manual verification item");
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("انقل مهمة Define project scope and requirements إلى In Progress");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.locator(".column-progress")).toContainText("Define project scope and requirements", { timeout: 90_000 });
+  await expect(page.locator(".trace.done")).toContainText(/نقل مهمة|Move task/i);
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Move Define project scope and requirements to Done");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.locator(".column-done")).toContainText("Define project scope and requirements", { timeout: 90_000 });
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Move Define project scope and requirements back to To Do");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.locator(".column-todo")).toContainText("Define project scope and requirements", { timeout: 90_000 });
+  await page.getByRole("textbox", { name: "Ask FlowMate" }).fill("Set the priority of Define project scope and requirements to urgent");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.locator(".column-todo .task-card").filter({ hasText: "Define project scope and requirements" })).toContainText("urgent", { timeout: 90_000 });
+  await page.reload();
+  await expect(page.locator(".column-todo")).toContainText("Define project scope and requirements");
+  await expect(page.locator(".column-progress")).toContainText("Manual verification item");
+  await expect(page.locator(".column-todo .task-card").filter({ hasText: "Define project scope and requirements" })).toContainText("urgent");
+  await expect(page.locator(".chat-error")).toHaveCount(0);
+});
